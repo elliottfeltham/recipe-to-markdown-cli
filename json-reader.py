@@ -27,7 +27,7 @@ for tag in scripts:
             continue
 
         
-        
+        # Successfully extracts from lists 
         if isinstance(data, list):
             for obj in data:
                 json.dumps(obj, indent=2)

@@ -33,7 +33,8 @@ def extract_recipe(url: str):
              return {"title": data.get("name").title(), 
                     "servings": data.get("recipeYield"), 
                     "ingredients": data.get("recipeIngredient"), 
-                    "steps": data.get("recipeInstructions")}
+                    "steps": data.get("recipeInstructions"),
+                    "source": url}
             
     # Return None if nothing found
     return None
@@ -53,13 +54,19 @@ def format_recipe_to_markdown(recipe: dict):
     for index, step in enumerate(steps, start=1):
         method.append(f"{index}. {step}\n\n")
 
-    with open(f"{RECIPES_FOLDER_PATH}/{recipe['title']}.md", "w") as file:
+    with open(f"{RECIPES_FOLDER_PATH}/{recipe["title"]}.md", "w") as file:
+        # For my own obsidian tagging system
+        file.write("> [!tags]- tags\n")
+        
+        # Write recipe in markdown
         file.write(f"*Serves: {recipe["servings"]} people*\n\n"
                     "## Ingredients:\n\n")
         file.writelines(ingredients)
         file.write(f"\n\n" 
                     "## Method:\n\n")
         file.writelines(method)
+        file.write(f"\n\n" 
+                    f"[Visit the website]({recipe["source"]})")
         
 def main():
     # Get the URL from the user and extract the webpage information
