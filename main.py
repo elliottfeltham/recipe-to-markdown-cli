@@ -3,55 +3,76 @@ import html
 import json
 from bs4 import BeautifulSoup
 
+RECIPES_FOLDER_PATH = "/Users/elliottfeltham/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidiannotes/Areas/Recipes/"
+
 # URLs for testing purposes
-test_url_1 = "https://www.bbcgoodfood.com/recipes/pasta-alla-vodka"
-test_url_2 = "https://www.bbcgoodfood.com/recipes/chicken-pasta-bake"
-test_url_3 = "https://www.allrecipes.com/recipe/30522/unbelievable-chicken/"
-
-# Send requests to recipe website
-response = requests.get(test_url_2, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-response.raise_for_status()
-
-# Recipe webpage string
-recipe_webpage = response.text
-
-# Use the Beautiful Soup library to parse the HTML and find the recipe scripts
-soup = BeautifulSoup(recipe_webpage, 'html.parser')
-scripts = soup.find_all("script", {"type": "application/ld+json"})
+test_url = "https://www.allrecipes.com/recipe/30522/unbelievable-chicken/"
 
 
-for tag in scripts:
-    # Turn the JSON text in a dict or a list with error handling
-    try:
-        data = json.loads(html.unescape(tag.get_text() or ""))
-    except json.JSONDecodeError:
-        continue
+def extract_recipe(url: str):
+    # Send requests to recipe website
+    response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+    response.raise_for_status()
+
+    # Recipe webpage string
+    recipe_webpage = response.text
+
+    # Use the Beautiful Soup library to parse the HTML and find the recipe scripts
+    soup = BeautifulSoup(recipe_webpage, 'html.parser')
+    scripts = soup.find_all("script", {"type": "application/ld+json"})
+
+    for tag in scripts:
+        # Turn the JSON text in a dict or a list with error handling
+        try:
+            data = json.loads(html.unescape(tag.get_text() or ""))
+        except json.JSONDecodeError:
+            continue
     
     # Find the correct recipe script
-    if data.get("@type") == "Recipe":
-        title = data.get("name").title()
-        servings = data.get("recipeYield")
-        ingredients = data.get("recipeIngredient")
-        steps = []
-
-        for step in data.get("recipeInstructions"):
+        if data.get("@type") == "Recipe":
+             return {"title": data.get("name").title(), 
+                    "servings": data.get("recipeYield"), 
+                    "ingredients": data.get("recipeIngredient"), 
+                    "steps": data.get("recipeInstructions")}
             
-            steps.append(step.get("text"))
+    # Return None if nothing found
+    return None
 
-        # Format recipe
-        print(f"{title}\n")
+                
+# Format recipe function
+def format_recipe_to_markdown(recipe: dict):
+    ingredients = []
+    for ingredient in recipe["ingredients"]:
+        ingredients.append(f"+ {ingredient} \n")
 
-        print(f"Serves: {servings}\n")
+    steps = []
+    for step in recipe["steps"]:
+        steps.append(step.get("text"))
 
-        print("Ingredients:")
-        print("\n".join(ingredients))
-        print("\n")
+    method = []
+    for index, step in enumerate(steps, start=1):
+        method.append(f"{index}. {step}\n\n")
 
-        print("Method:")
-        for index, step in enumerate(steps, start=1):
-            print(f"{index}: {step}")
-
-        break
+    with open(f"{RECIPES_FOLDER_PATH}/{recipe['title']}.md", "w") as file:
+        file.write(f"*Serves: {recipe["servings"]} people*\n\n"
+                    "## Ingredients:\n\n")
+        file.writelines(ingredients)
+        file.write(f"\n\n" 
+                    "## Method:\n\n")
+        file.writelines(method)
         
-    
+def main():
+    # Get the URL from the user and extract the webpage information
+    recipe_url = input("Paste a recipe's URL to send it to your notes: ").strip()
+    recipe = extract_recipe(recipe_url)
 
+    # Print a message if recipe not extracted
+    if not recipe:
+        print("No Recipe JSON-LD found on that page.")
+        return
+    
+    # Format recipe and write it to notes
+    format_recipe_to_markdown(recipe)
+    print("Successfully saved to your notes!")
+                    
+main()
