@@ -27,14 +27,24 @@ def extract_recipe(url: str):
             data = json.loads(html.unescape(tag.get_text() or ""))
         except json.JSONDecodeError:
             continue
+
     
-    # Find the correct recipe script
-        if data.get("@type") == "Recipe":
-             return {"title": data.get("name").title(), 
-                    "servings": data.get("recipeYield"), 
-                    "ingredients": data.get("recipeIngredient"), 
-                    "steps": data.get("recipeInstructions"),
-                    "source": url}
+        # Find the correct recipe script
+        if isinstance(data, list):
+                for obj in data:
+                    if obj.get("@type") == "Recipe":
+                        return {"title": obj.get("name").title(), 
+                            "servings": obj.get("recipeYield"), 
+                            "ingredients": obj.get("recipeIngredient"), 
+                            "steps": obj.get("recipeInstructions"),
+                            "source": url}
+        else:
+            if data.get("@type") == "Recipe":
+                return {"title": data.get("name").title(), 
+                        "servings": data.get("recipeYield"), 
+                        "ingredients": data.get("recipeIngredient"), 
+                        "steps": data.get("recipeInstructions"),
+                        "source": url}
             
     # Return None if nothing found
     return None
@@ -56,10 +66,10 @@ def format_recipe_to_markdown(recipe: dict):
 
     with open(f"{RECIPES_FOLDER_PATH}/{recipe["title"]}.md", "w") as file:
         # For my own obsidian tagging system
-        file.write("> [!tags]- tags\n")
-        
+        file.write("> [!tags]- tags:\n")
+
         # Write recipe in markdown
-        file.write(f"*Serves: {recipe["servings"]} people*\n\n"
+        file.write(f"\n*Serves: {recipe["servings"]} people*\n\n"
                     "## Ingredients:\n\n")
         file.writelines(ingredients)
         file.write(f"\n\n" 
