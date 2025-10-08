@@ -26,16 +26,8 @@ for tag in scripts:
         except json.JSONDecodeError:
             continue
 
-        
-        # Successfully extracts from lists 
-        if isinstance(data, list):
-            for obj in data:
-                json.dumps(obj, indent=2)
-                if obj.get("@type") == "Recipe":
-                    print({"title": obj.get("name").title(), 
-                        "servings": obj.get("recipeYield"), 
-                        "ingredients": obj.get("recipeIngredient"), 
-                        "steps": obj.get("recipeInstructions")})
+        print(json.dumps(data, indent=2))
+                
              
 
 

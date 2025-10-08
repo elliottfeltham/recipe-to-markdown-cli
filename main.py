@@ -31,13 +31,26 @@ def extract_recipe(url: str):
     
         # Find the correct recipe script
         if isinstance(data, list):
-                for obj in data:
-                    if obj.get("@type") == "Recipe":
-                        return {"title": obj.get("name").title(), 
+            for obj in data:
+                # Check if the "Recipe" type is in a string or a list
+                if obj.get("@type") == "Recipe" or "Recipe" in obj.get("@type"):
+                    return {"title": obj.get("name").title(), 
                             "servings": obj.get("recipeYield"), 
                             "ingredients": obj.get("recipeIngredient"), 
                             "steps": obj.get("recipeInstructions"),
                             "source": url}
+
+        # Handle cases where the recipe uses the @graph schema
+        elif isinstance(data, dict) and data.get("@graph"):
+            for obj in data["@graph"]:
+                if obj.get("@type") == "Recipe":
+                    return {"title": obj.get("name").title(), 
+                            "servings": obj.get("recipeYield"), 
+                            "ingredients": obj.get("recipeIngredient"), 
+                            "steps": obj.get("recipeInstructions"),
+                            "source": url}
+                
+        # Handle the simple dict JSON-LD
         else:
             if data.get("@type") == "Recipe":
                 return {"title": data.get("name").title(), 
@@ -56,9 +69,13 @@ def format_recipe_to_markdown(recipe: dict):
     for ingredient in recipe["ingredients"]:
         ingredients.append(f"+ {ingredient} \n")
 
+    # Check if each step is in a dict or just a string
     steps = []
     for step in recipe["steps"]:
-        steps.append(step.get("text"))
+        if isinstance(step, dict): 
+            steps.append(step.get("text"))
+        else:
+            steps.append(step)
 
     method = []
     for index, step in enumerate(steps, start=1):
