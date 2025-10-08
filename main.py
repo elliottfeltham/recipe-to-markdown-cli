@@ -8,6 +8,12 @@ RECIPES_FOLDER_PATH = "/Users/elliottfeltham/Library/Mobile Documents/iCloud~md~
 # URLs for testing purposes
 test_url = "https://www.allrecipes.com/recipe/30522/unbelievable-chicken/"
 
+def parse_recipe_obj(obj, url):
+    return {"title": obj.get("name").title(), 
+            "servings": obj.get("recipeYield"), 
+            "ingredients": obj.get("recipeIngredient"), 
+            "steps": obj.get("recipeInstructions"),
+            "source": url}
 
 def extract_recipe(url: str):
     # Send requests to recipe website
@@ -28,36 +34,33 @@ def extract_recipe(url: str):
         except json.JSONDecodeError:
             continue
 
-    
+        
         # Find the correct recipe script
         if isinstance(data, list):
             for obj in data:
-                # Check if the "Recipe" type is in a string or a list
-                if obj.get("@type") == "Recipe" or "Recipe" in obj.get("@type"):
-                    return {"title": obj.get("name").title(), 
-                            "servings": obj.get("recipeYield"), 
-                            "ingredients": obj.get("recipeIngredient"), 
-                            "steps": obj.get("recipeInstructions"),
-                            "source": url}
+                try:
+                    # Check if the "Recipe" type is in a string or a list
+                    if obj.get("@type") == "Recipe" or "Recipe" in obj.get("@type"):
+                        return parse_recipe_obj(obj, url)
+                except TypeError:
+                    continue
 
         # Handle cases where the recipe uses the @graph schema
         elif isinstance(data, dict) and data.get("@graph"):
             for obj in data["@graph"]:
-                if obj.get("@type") == "Recipe":
-                    return {"title": obj.get("name").title(), 
-                            "servings": obj.get("recipeYield"), 
-                            "ingredients": obj.get("recipeIngredient"), 
-                            "steps": obj.get("recipeInstructions"),
-                            "source": url}
+                try:
+                    if obj.get("@type") == "Recipe":
+                        return parse_recipe_obj(obj, url)
+                except Exception:
+                    continue
                 
         # Handle the simple dict JSON-LD
         else:
-            if data.get("@type") == "Recipe":
-                return {"title": data.get("name").title(), 
-                        "servings": data.get("recipeYield"), 
-                        "ingredients": data.get("recipeIngredient"), 
-                        "steps": data.get("recipeInstructions"),
-                        "source": url}
+            try:
+                if data.get("@type") == "Recipe":
+                    return parse_recipe_obj(data, url)
+            except Exception:
+                pass
             
     # Return None if nothing found
     return None
@@ -102,7 +105,7 @@ def main():
 
     # Print a message if recipe not extracted
     if not recipe:
-        print("No Recipe JSON-LD found on that page.")
+        print("No recipe found on that page.")
         return
     
     # Format recipe and write it to notes
