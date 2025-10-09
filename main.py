@@ -103,11 +103,15 @@ def format_recipe_to_markdown(recipe: dict):
 
     # Check if each step is in a dict or just a string
     steps = []
-    for step in recipe["steps"]:
-        if isinstance(step, dict): 
-            steps.append(step.get("text"))
-        else:
-            steps.append(step)
+
+    if isinstance(recipe["steps"], str):
+        steps.append(recipe["steps"])
+    else:
+        for step in recipe["steps"]:
+            if isinstance(step, dict): 
+                steps.append(step.get("text"))
+            else:
+                steps.append(step)
 
     method = []
     for index, step in enumerate(steps, start=1):
