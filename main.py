@@ -131,7 +131,7 @@ def main():
     
     # Get the URL from the user and extract the webpage information
     cli_input = get_arguments()
-    if cli_input == sys.argv[1]:
+    if cli_input:
         recipe_url = cli_input
     else:
         recipe_url = input("Paste a recipe's URL to send it to your notes: ").strip()
