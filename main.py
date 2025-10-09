@@ -8,6 +8,33 @@ RECIPES_FOLDER_PATH = "/Users/elliottfeltham/Library/Mobile Documents/iCloud~md~
 # URLs for testing purposes
 test_url = "https://www.allrecipes.com/recipe/30522/unbelievable-chicken/"
 
+# Add a find recipe function which normalizes the searching and reduces repeated code below
+def find_recipe(obj):
+    type_field = obj.get("@type")
+
+    if type_field == None:
+        return False
+    
+    # If @type is a string
+    if isinstance(type_field, str):
+        if type_field.lower() == "recipe":
+            return True
+        else:
+            return False
+    
+    # If @type is a list
+    if isinstance(type_field, list):
+        for item in type_field:
+            if str(item).lower() == "recipe":
+                return True
+            
+        return False
+    
+    # If recipe is neither string or list
+    return False
+    
+
+
 def parse_recipe_obj(obj, url):
     return {"title": obj.get("name").title(), 
             "servings": obj.get("recipeYield"), 
@@ -38,29 +65,23 @@ def extract_recipe(url: str):
         # Find the correct recipe script
         if isinstance(data, list):
             for obj in data:
-                try:
-                    # Check if the "Recipe" type is in a string or a list
-                    if obj.get("@type") == "Recipe" or "Recipe" in obj.get("@type"):
+                # Check if the "Recipe" type is in a string or a list
+                if find_recipe(obj):
                         return parse_recipe_obj(obj, url)
-                except TypeError:
-                    continue
+                
 
         # Handle cases where the recipe uses the @graph schema
         elif isinstance(data, dict) and data.get("@graph"):
             for obj in data["@graph"]:
-                try:
-                    if obj.get("@type") == "Recipe":
-                        return parse_recipe_obj(obj, url)
-                except Exception:
-                    continue
+                if find_recipe(obj):
+                    return parse_recipe_obj(obj, url)
+        
                 
         # Handle the simple dict JSON-LD
         else:
-            try:
-                if data.get("@type") == "Recipe":
-                    return parse_recipe_obj(data, url)
-            except Exception:
-                pass
+            if find_recipe(data):
+                return parse_recipe_obj(data, url)
+            
             
     # Return None if nothing found
     return None
