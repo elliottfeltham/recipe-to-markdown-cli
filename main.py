@@ -1,12 +1,20 @@
 import requests
 import html
 import json
+import sys
 from bs4 import BeautifulSoup
 
 RECIPES_FOLDER_PATH = "/Users/elliottfeltham/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidiannotes/Areas/Recipes/"
 
 # URLs for testing purposes
 test_url = "https://www.allrecipes.com/recipe/30522/unbelievable-chicken/"
+
+def get_arguments():
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    else:
+        return None
+        
 
 # Add a find recipe function which normalizes the searching and reduces repeated code below
 def find_recipe(obj):
@@ -120,15 +128,22 @@ def format_recipe_to_markdown(recipe: dict):
                     f"[Visit the website]({recipe["source"]})")
         
 def main():
+    
     # Get the URL from the user and extract the webpage information
-    recipe_url = input("Paste a recipe's URL to send it to your notes: ").strip()
+    cli_input = get_arguments()
+    if cli_input == sys.argv[1]:
+        recipe_url = cli_input
+    else:
+        recipe_url = input("Paste a recipe's URL to send it to your notes: ").strip()
+
+     
     recipe = extract_recipe(recipe_url)
 
     # Print a message if recipe not extracted
     if not recipe:
         print("No recipe found on that page.")
         return
-    
+    get_arguments()
     # Format recipe and write it to notes
     format_recipe_to_markdown(recipe)
     print("Successfully saved to your notes!")
